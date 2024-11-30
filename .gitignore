@@ -1,0 +1,7 @@
+.clj-kondo/
+.lsp.*
+.lsp/
+.token
+__pycache__
+input.txt
+notes.org

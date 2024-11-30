@@ -1,0 +1,81 @@
+{:paths ["."]
+ :deps {org.clojure/math.numeric-tower {:mvn/version "0.0.5"}
+        org.clojure/math.combinatorics {:mvn/version "0.2.0"}}
+ :tasks
+ {:requires ([babashka.curl :as curl]
+             [babashka.fs :as fs]
+             [clojure.string :refer [join split-lines]])
+  :init
+  (do
+    (defn exit! [& msgs] (apply println msgs) (System/exit 1))
+    (defn date->fmt [fmt] (.format (java.text.SimpleDateFormat. fmt) (new java.util.Date)))
+    (def token
+      (try (slurp ".token")
+           (catch java.io.FileNotFoundException e (exit! (str e)))))
+    (def yd->url (partial format "https://adventofcode.com/%s/day/%s/input"))
+    (def dirname (partial format "day%02d"))
+    (def fname (partial format "%s/input.txt"))
+    (defn d-or-today [d] (or d (date->fmt "d")))
+    (defn fetch-input [url token]
+      (curl/get url {:raw-args ["--cookie" (format "session=%s" token)] :throw false}))
+    (defn mkdir [d] (when-not (fs/exists? d) (println "Creating" d) (fs/create-dir d)))
+    (defn d-and-yr [d yr] [(d-or-today d) (or yr (date->fmt "Y"))]))
+
+  template
+  {:doc "  create template for solution [day and year default to current]"
+   :task
+   (let [[d yr] *command-line-args*
+         [d* _] (d-and-yr d yr)
+         dint (parse-long d*)
+         dir (dirname dint)
+         fp (str dir "/" "solution.clj")
+         tpl (format (slurp ".template.txt") dint)]
+     (when (fs/exists? fp) (exit! fp "already exists!"))
+     (mkdir dir)
+     (println "Creating template for day" d*)
+     (spit fp tpl))}
+
+  fetch
+  {:doc "  get input for given day [requires session token stored in `.token` file ; args default to today]"
+   :task
+   (let [[d yr] *command-line-args*
+         [d* yr*] (d-and-yr d yr)
+         url (yd->url yr* d*)
+         dir (dirname (parse-long d*))
+         path (fname dir)
+         {:keys [status body]} (fetch-input url token)
+         ok? (= status 200)]
+     (when-not ok? (exit! status body))
+     (mkdir dir)
+     (spit path body)
+     (let [msg (format "AoC %s day %s input successfully fetched!" yr* d*)
+           amount 30
+           lines (split-lines (slurp path))]
+       (println msg)
+       (if (>= (count lines) amount)
+         (println (format "Showing first %d lines:" amount))
+         (println "Fetched input:"))
+       (println (apply str (take (count msg) (repeat "-"))))
+       (println (join "\n" (take 30 lines)))
+       (let [rst (drop amount lines)]
+         (when-not (empty? rst)
+           (println (format "[... %d lines skipped ...]" (count rst)))))))}
+
+  boot
+  {:doc "  fetch input data and create template for given date"
+   :depends [fetch template]}
+
+  solve
+  {:doc "  run solution for given day [day defaults to today]"
+   :task
+   (let [d (Integer. (d-or-today (first *command-line-args*)))
+         day (format "day%02d" d)
+         fnc (symbol (str day ".solution") "-main")]
+     (try
+       ;; a propos `requiring-resolve` see also `exec` https://book.babashka.org/#cli:exec
+       (time
+        (let [solutions ((requiring-resolve fnc) day)]
+          (doseq [[k v] solutions] (printf "%s %s%n" k v))))
+       (catch java.lang.Exception e
+         (println "Could not run solution for day" d)
+         (println "Error:" (str e)))))}}}
