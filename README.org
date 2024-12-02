@@ -1,0 +1,76 @@
+#+title: Advent of Code 2024: Notes
+
+
+* Day 1
+
+** Part 1
+
+I'm particularly fond of using threading macros in Clojure, as they make it
+easy to follow and express input transformations step by step. It's
+interesting how this preference can sometimes lead to tunnel vision,
+preventing me from noticing simpler solutions.
+
+For example, consider this implementation:
+
+#+begin_src clojure
+  (->> lists
+       (map sort)
+       (apply map list)
+       (reduce (fn [s p] (+ s (abs (apply - p)))) 0))
+#+end_src
+
+Here, there's a transposing step to create a list of pairs from two lists
+(=(apply map list)=), but it's somewhat redundant since the operations in
+=reduce= can be performed directly without transposing:
+
+#+begin_src clojure
+  (->> lists
+       (map sort)
+       (apply #(mapv (comp abs -) %1 %2))
+       (apply +))
+#+end_src
+
+Finally, stepping away from the threading mindset and flipping the logic upside down reduces this to a one-liner:
+
+#+begin_src clojure
+(reduce + (mapv (comp abs -) (map sort lists)))
+#+end_src
+
+Now -- I like it because it's consise and I already know the logic, but is
+it more readable?
+
+
+** Part 2
+
+I completely forgot about =frequencies= -- honestly, I was surprised such an obvious utility hadn't already been implemented...  Naturally, this:
+
+#+begin_src clojure
+(->> right (reduce (fn [m e] (update m e (fnil inc 0))) {}))
+#+end_src
+
+can be replaced with the much simpler:
+
+#+begin_src clojure
+(frequencies right)
+#+end_src
+
+and then redundant threading becomes:
+
+#+begin_src clojure
+(reduce (fn [s n] (+ (* n (fqs n 0)) s)) 0 left)
+#+end_src
+
+Initial =0= in =reduce= can be eliminated by using transducer that maps
+over the first list:
+
+#+begin_src clojure
+(transduce (map #(abs (* % (fqs % 0)))) + left)
+#+end_src
+
+Once again, I like the transducer version when I see it -- no need for a
+redundant initial step, and no need for an explicit fn declaration. That
+said, "transductions" still bend my mind a bit!
+
+P.S.  I'm still glad I wrote my version of =frequencies=.  It gave me the
+opportunity to discover =fnil= which combined with =update=, provides
+functionality similar to Python's =defaultdict=: =(update MAP key (fnil inc 0))=.
