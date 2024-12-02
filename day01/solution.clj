@@ -9,18 +9,15 @@
        (apply map list)))
 
 (defn part1 [lists]
-  (->> lists
-       (map sort)
-       (apply map list)
-       (reduce (fn [s p] (+ s (abs (apply - p)))) 0)))
+  (reduce + (apply mapv (comp abs -) (map sort lists))))
 
-(defn part2 [left right]
-  (let [occurences (->> right (reduce (fn [m e] (update m e (fnil inc 0))) {}))]
-    (->> left (reduce (fn [s n] (+ (* n (get occurences n 0)) s)) 0))))
+(defn part2 [[left right]]
+  (let [fqs (frequencies right)]
+    (reduce (fn [s n] (+ (* n (fqs n 0)) s)) 0 left)))
 
 (defn -main [day]
-  (let [[L R :as lists] (parse (file->str day))]
-    {:part1 (part1 lists) :part2 (part2 L R)}))
+  (let [lists (parse (file->str day))]
+    {:part1 (part1 lists) :part2 (part2 lists)}))
 
 
 (comment
@@ -30,8 +27,7 @@
 1   3
 3   9
 3   3"
-        [L R :as input] (->> test-input parse)]
+        input (->> test-input parse)]
     (assert (= 11 (part1 input)))
-    (assert (= 31 (part2 L R)))
-    )
+    (assert (= 31 (part2 input))))
   )
