@@ -78,4 +78,10 @@
           (doseq [[k v] solutions] (printf "%s %s%n" k v))))
        (catch java.lang.Exception e
          (println "Could not run solution for day" d)
-         (println "Error:" (str e)))))}}}
+         (println "Error:" (str e)))))}
+
+  t (run 'template)
+  f (run 'fetch)
+  b (run 'boot)
+  s (run 'solve)
+  }}
