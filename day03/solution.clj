@@ -1,15 +1,13 @@
 (ns day03.solution
-  (:require [tools :refer [file->str]]))
+  (:require [tools :refer [file->str]]
+            [clojure.string :as str]))
+
+(defn clear-donts [s] (str/replace s #"(?s)don't\(\).*?(do\(\)|\Z)" ""))
 
 (defn solve [input part]
-  (let [ops (re-seq #"mul\(\d+,\d+\)|do\(\)|don't\(\)" input)
+  (let [ops (re-seq #"mul\(\d+,\d+\)" (cond-> input (= part 2) clear-donts))
         mul #(apply * (map read-string (re-seq #"\d+" %)))]
-    (loop [[op & xs] ops, enabled true, sum 0]
-      (if (nil? op) sum
-          (condp = op
-            "do()"    (recur xs true sum)
-            "don't()" (recur xs false sum)
-                      (recur xs enabled (cond-> sum (or enabled (= part 1)) (+ (mul op)))))))))
+    (->> ops (map mul) (apply +))))
 
 (defn -main [day]
   (let [p (partial solve (file->str day))]

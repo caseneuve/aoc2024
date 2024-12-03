@@ -74,3 +74,46 @@ said, "transductions" still bend my mind a bit!
 P.S.  I'm still glad I wrote my version of =frequencies=.  It gave me the
 opportunity to discover =fnil= which combined with =update=, provides
 functionality similar to Python's =defaultdict=: =(update MAP key (fnil inc 0))=.
+
+* Day 3
+
+In my first approach, I used a straightforward loop:
+
+#+begin_src clojure
+  (loop [[op & xs] ops, enabled true, sum 0]
+    (if (nil? op) sum
+        (condp = op
+          "do()"    (recur xs true sum)
+          "don't()" (recur xs false sum)
+                    (recur xs enabled (cond-> sum (or enabled (= part 1)) (+ (mul op)))))))
+#+end_src
+
+Here, =ops= is a list of all occurrences of "muls", "dos", and
+"don'ts". It's still quite verbose with three =recur= calls. The =mul=
+function computes the product of integers extracted from the matching
+strings.
+
+Wanting a more concise solution, I initially tried to write smarter
+regexes.  However, this quickly led to the classic "now you have two
+problems" scenario.  As it turns out, the simpler solution wasn't
+about designing a better regex to catch what I needed but to /remove/
+irrelevant parts of the input using one.
+
+So the trick fo part 2 is =(str/replace s #"(?s)don't\(\).*?(do\(\)|\Z)" "")=.
+
+Here’s how it works:
+
+- =(?s)= enables /dot-matches-all/ mode, allowing =.= to match any character, including newlines (=\n=).
+- =.*?= matches zero or more of any character, /non-greedily/.
+- =(do\(\)|\Z)= matches =do()= or /the end of input/ (=\Z=).
+
+Using this cleanup step, the revised solution looks like this:
+
+#+begin_src clojure
+(defn clear-donts [s] (str/replace s #"(?s)don't\(\).*?(do\(\)|\Z)" ""))
+
+(defn solve [input part]
+  (let [ops (re-seq #"mul\(\d+,\d+\)" (cond-> input (= part 2) clear-donts))
+        mul #(apply * (map read-string (re-seq #"\d+" %)))]
+    (->> ops (map mul) (apply +))))
+#+end_src
