@@ -117,3 +117,22 @@ Using this cleanup step, the revised solution looks like this:
         mul #(apply * (map read-string (re-seq #"\d+" %)))]
     (->> ops (map mul) (apply +))))
 #+end_src
+
+
+* Day 4
+
+For now I keep ugly notes with a working solution...  Would like to
+refactor the =diag(onal)= transposition function and use it in the part
+2, along with =juxt=.
+
+
+* Day 5
+
+That was fun!  I got to a working solution pretty quickly with loops
+and checking pages ordering by using =set/intersection= of rules for
+given page and pages preceding it.  But then, after staring at both
+parts for a while, I've just realized that the only thing I need is
+actually the simple comparator used to sort the pages =#(not (contains? (RUL %2) %1))=
+-- by comparing sorted pages to original pages I know
+which should go to which part of the solution, the rest is simple
+reduction.
