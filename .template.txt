@@ -1,9 +1,9 @@
 (ns day%02d.solution
   (:require [tools :refer [file->lines file->str]]
-            [clojure.string :refer [split-lines split join]]))
+            [clojure.string :refer [split-lines split join trim]]))
 
 (defn -main [day]
-  (let [input (file->lines day)]
+  (let [input (file->str day)]
     {:part1 nil :part2 nil}))
 
 
