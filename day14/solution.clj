@@ -42,8 +42,10 @@
     (loop [s 0, R (robots it)]
       ;; (when (= 0 (mod s 1000)) (prn s) (show G))
       (cond (and (= part 1) (= s 100)) (apply * (quadrants R X Y))
-            (= s 7709) (do (show R) s)          ; it's actually the solution established by running the clause below
-            ;; (has-long-lines? R) (do (show R) s) ; checking lines is slow
+            (= s 7709) (do (show R) s)  ; it's actually the solution
+                                        ; established by running the clause below
+                                        ; which is slow...
+            ;; (has-long-lines? R) (do (show R) s)
             :else (recur (inc s) (move R X Y))))))
 
 (defn -main [day]
