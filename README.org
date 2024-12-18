@@ -136,3 +136,30 @@ actually the simple comparator used to sort the pages =#(not (contains? (RUL %2)
 -- by comparing sorted pages to original pages I know
 which should go to which part of the solution, the rest is simple
 reduction.
+
+* Day 18
+
+Dijkstra is faster here (0.1 sec vs 0.15 using only =bfs= for both
+parts), but after all I decided to refactor using only =bfs= for
+simplicity.  Also it looks like second part can be brute-forced, but
+due to some typos in my initial implementation I thought it would be
+running forever, hence implemented binary search...
+
+#+begin_src clojure
+  (defn shortest-path [bytes [X Y :as exit] cut]
+    (let [BYT (set (take cut bytes))]
+      (loop [Q (priority-map [[0 0] #{[0 0]}] 0), best Integer/MAX_VALUE, score-map {}]
+        (if (empty? Q) (dec best)
+            (let [[[pos seen] _] (peek Q)]
+              (if (= pos exit) (recur (pop Q), (min (count seen) best), score-map)
+                  (let [[mvs scs]
+                        (reduce
+                         (fn [[mv bs] [x y :as pos]]
+                           (let [s (count seen)]
+                             (if (and (<= 0 x X) (<= 0 y Y)
+                                      (not (contains? BYT pos)) (not (contains? seen pos))
+                                      (< s (score-map pos Integer/MAX_VALUE)))
+                               [(conj mv [[pos (conj seen pos)] s]) (assoc bs pos s)]
+                               [mv bs])))
+                         [[] score-map] (t/moves pos))])))))))
+#+end_src
