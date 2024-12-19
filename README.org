@@ -163,3 +163,52 @@ running forever, hence implemented binary search...
                                [mv bs])))
                          [[] score-map] (t/moves pos))])))))))
 #+end_src
+
+
+* Day 19
+
+Another memo day.  I got an over-complicated solution for part one
+(priority maps fixation after previous days, I guess...) -- it was
+giving the right answer, however the run was not finishing due all
+possible combinations:
+
+#+begin_src clojure
+  (fn [init]
+    (loop [Q (into (priority-map) (map (fn [n] [[(subs init 0 n) 0] (- (count init) n)]) pos)),
+           steps 0]
+      (cond
+        (= steps 120) false ; 120 was enough for me, but this should've been
+                            ; an indicator than I should be looking for something better...
+        (empty? Q) false
+        :else
+        (let [[[s idx] left] (peek Q)
+              c (count s)]
+          (if (contains? (px c) s)
+            (if (zero? left) true
+                (recur
+                 (into (pop Q)
+                       (map (fn [n]
+                              [[(subs init (+ idx c) (+ idx c n)) (+ idx c)]
+                               (- left n)])
+                            (remove #(> % left) pos))),
+                 (inc steps)))
+            (recur (pop Q) (inc steps)))))))
+#+end_src
+
+Obviously it wasn't working for part 2.  Wanted to refactor the above
+to use "keep state" map, but it was, again, over complicated.  Finally
+started from scratch with =memoize= and more elegant string processing
+using =starts-with?= instead of a set lookup for a slice.  Code for part 2 was
+basically the same (instead of getting "some", i. e. any, we need to
+get "all"), I used the final version to solve both parts.
+
+#+Begin_src clojure
+(def p1
+  (memoize
+   (fn [cur pats]
+     (if (empty? cur) 1
+         (some
+          (fn [s]
+            (when (starts-with? cur s)
+              (p1 (subs cur (count s)) pats))) pats)))))
+#+end_src
